@@ -4,6 +4,9 @@ import re
 import os
 import argparse
 
+# If facing trouble with this script or have inquiries:
+# feel free to make the github issue or contact through github issue or: conner.langeberg@berkeley.edu, terry.kim@berkeley.edu
+
 def sanitize_filename(name):
     """Sanitize the sequence name to create a valid filename."""
     # Remove any characters that are not alphanumeric, underscore, hyphen, dot, or space

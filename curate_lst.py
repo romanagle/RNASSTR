@@ -1,5 +1,8 @@
 import os
 
+# If facing trouble with this script or have inquiries:
+# feel free to make the github issue or contact through github issue or: conner.langeberg@berkeley.edu, terry.kim@berkeley.edu
+
 def compile_bpseq_paths(directory, output_file, base_path=None, limit=None):
     """
     Compile paths to .bpseq files into a .lst file, prepending base_path and the directory type (train/test) to each file.

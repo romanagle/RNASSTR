@@ -1,5 +1,7 @@
-# Below Script gives a function for RNA secondary structure using sincFold, ouputting a csv with the 
-# 
+# Below Script gives a function for RNA secondary structure using trained sincfold parameter
+# Outputs: csv filled with predicted structure
+# If facing trouble with this script or have inquiries:
+# Feel free to make the github issue or contact through github issue or: conner.langeberg@berkeley.edu, terry.kim@berkeley.edu
 import pandas as pd
 import subprocess
 from subprocess import run, PIPE

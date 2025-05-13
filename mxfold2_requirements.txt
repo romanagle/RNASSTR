@@ -1,0 +1,7 @@
+# Note: Custom installation of mxfold2 package from a wheel file will be handled in the custom installation script
+matplotlib
+seaborn
+pandas
+numpy
+scikit-learn
+PyYAML
