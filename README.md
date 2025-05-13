@@ -51,11 +51,17 @@ Datasets are split into:
 
 Each model may require a different environment setup. See below for details.
 
-### For sincFold
 
-sincFold's environment and dependencies are self-contained. Please refer directly to the [sincFold repository](https://github.com/sinc-lab/sincFold) for installation. If using RNASSTR for evaluation with sincFold:
-- You must modify the weights in `model.py` of sincFold to switch between training checkpoints.
-- The script `pred_eval_sincfold.py` will use the CLI version to predict structures.
+## Model Setup
+
+MXfold2 requires `.lst` files containing paths to `.bpseq` files for both training and evaluation.
+
+We include wheel files for ease of installation:
+- `setting/mxfold2-0.1.2-cp310-cp310-manylinux_2_17_x86_64.whl` (Linux)
+- `setting/mxfold2-0.1.2-cp310-cp310-macosx_13_0_arm64.whl` (MacOS)
+
+Refer to the official repo for details: [https://github.com/mxfold/mxfold2](https://github.com/mxfold/mxfold2)
+
 
 ### For MXfold2
 
@@ -80,6 +86,13 @@ pip install -r setting/mxfold2_requirements.txt
 # Run custom installation script for MXfold2 wheel
 bash setting/mxfold2_install_dependencies.sh
 ```
+
+### For sincFold
+
+sincFold's environment and dependencies are self-contained. Please refer directly to the [sincFold repository](https://github.com/sinc-lab/sincFold) for installation. If using RNASSTR for evaluation with sincFold:
+- You must modify the weights in `model.py` of sincFold to switch between training checkpoints.
+- The script `pred_eval_sincfold.py` will predict structures and store the values in the columns of a new csv.
+
 
 ---
 
@@ -132,15 +145,6 @@ python curate_lst.py --bpseq_dir data/bpseq/train --output_lst data/train.lst
 
 ---
 
-## MXfold2 Setup
-
-MXfold2 requires `.lst` files containing paths to `.bpseq` files for both training and evaluation.
-
-We include wheel files for ease of installation:
-- `setting/mxfold2-0.1.2-cp310-cp310-manylinux_2_17_x86_64.whl` (Linux)
-- `setting/mxfold2-0.1.2-cp310-cp310-macosx_13_0_arm64.whl` (MacOS)
-
-Refer to the official repo for details: [https://github.com/mxfold/mxfold2](https://github.com/mxfold/mxfold2)
 
 ---
 
@@ -153,12 +157,12 @@ python pred_eval_sincfold.py --input_csv data/rna_validate.csv --output_csv resu
 ```
 
 This script performs the following:
-- Runs sincFold structure prediction using the CLI.
+- Runs sincFold structure prediction based on the assigned weight.
 - Parses the predicted dot-bracket strings.
 - Computes F1 score (with tolerance) and Matthews Correlation Coefficient (MCC) for each sequence.
 - Taking input of the original csv, writes results to a new csv with a column containing the Predicted structure
 
-> 📌 **Note**: Be sure to modify `sincfold/model.py` to point to your desired checkpoint weights before running prediction. This ensures you're using the correct trained model during evaluation, and run pip install again to ensure update.
+> 📌 **EXTRA Note**: Be sure to modify `sincfold/model.py` to point to your desired checkpoint weights before running prediction. This ensures you're using the correct trained model during evaluation, and run pip install again to ensure update.
 
 ---
 
