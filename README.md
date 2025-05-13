@@ -1,6 +1,6 @@
 # RNASSTR: RNA Secondary Structure Repository
 
-**RNASSTR** is a curated benchmark suite and reproducible pipeline for evaluating RNA secondary structure prediction tools. It provides standardized datasets, conversion utilities, and evaluation scripts to facilitate consistent benchmarking across various models, including [sincFold](https://github.com/sinc-lab/sincFold) and [MXfold2](https://github.com/mxfold/mxfold2).
+**RNASSTR** is a curated benchmark suite and reproducible pipeline for evaluating RNA secondary structure prediction models. It provides standardized datasets, conversion utilities, and evaluation scripts to facilitate consistent benchmarking across various models, including [sincFold](https://github.com/sinc-lab/sincFold) and [MXfold2](https://github.com/mxfold/mxfold2).
 
 If you use RNASSTR in your research, please cite the following paper:
 
@@ -28,7 +28,8 @@ If you use RNASSTR in your research, please cite the following paper:
 
 ## About
 
-RNA secondary structure prediction is vital for understanding RNA function and interactions. RNASSTR provides a clean, reproducible dataset and toolkit for evaluating these predictions.
+In recent years, deep learning has revolutionized protein structure prediction, achieving remarkable speed and accuracy. RNA structure prediction, however, has lagged behind. Although several methods have shown moderate success in predicting RNA secondary and tertiary structures, none have reached the accuracy observed with contemporary protein models. The lack of success of these RNA structure prediction models has been proposed to be due to limited high-quality structural information that can be used as training data. To probe
+this proposed limitation, we developed a large and diverse dataset comprising paired RNA sequences and their corresponding secondary structures.
 
 ### Dataset Format
 
@@ -125,7 +126,7 @@ python curate_lst.py --bpseq_dir data/bpseq/train --output_lst data/train.lst
 
 | Script                  | Use Case                                                                 |
 |------------------------|--------------------------------------------------------------------------|
-| `curate_bpseq.py`       | Converts RNA CSV to `.bpseq` format for tools like MXfold2 or Ufold.     |
+| `curate_bpseq.py`       | Converts RNA CSV to `.bpseq` format for models like MXfold2 or Ufold.     |
 | `curate_lst.py`         | Creates `.lst` file that lists `.bpseq` files for MXfold2 input.         |
 | `pred_eval_sincfold.py` | Runs sincFold predictions and evaluates them using F1 and MCC metrics.   |
 
