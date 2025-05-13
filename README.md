@@ -125,13 +125,11 @@ def main():
 
 #### Step 2: Create .lst File
 
-Once BPSEQ files are created, generate `.lst` files required by MXfold2:
+Once BPSEQ files are created, generate `.lst` files required by MXfold2 using the `curate_lst.py`. Assign the relevant target paths.
 
 ```bash
-python curate_lst.py --bpseq_dir data/bpseq/train --output_lst data/train.lst
+python3 curate_lst.py
 ```
-
-> 🔧 Note: For `curate_lst.py` and `pred_eval_sincfold.py`, you may need to modify the path variables directly in the script unless you add argparse handling.
 
 ---
 
@@ -146,20 +144,18 @@ python curate_lst.py --bpseq_dir data/bpseq/train --output_lst data/train.lst
 ---
 
 
----
-
 ## sincFold Evaluation
 
-To evaluate sincFold using RNASSTR benchmark datasets:
+To evaluate sincFold using RNASSTR benchmark datasets, run the script  `pred_eval_sincfold.py` with relevant paths assigned.
 
 ```bash
-python pred_eval_sincfold.py --input_csv data/rna_validate.csv --output_csv results/sincfold_predictions.csv
+python3 pred_eval_sincfold.py
 ```
 
 This script performs the following:
 - Runs sincFold structure prediction based on the assigned weight.
 - Parses the predicted dot-bracket strings.
-- Computes F1 score (with tolerance) and Matthews Correlation Coefficient (MCC) for each sequence.
+- Computes F1 score and Matthews Correlation Coefficient (MCC) for sequences.
 - Taking input of the original csv, writes results to a new csv with a column containing the Predicted structure
 
 > 📌 **EXTRA Note**: Be sure to modify `sincfold/model.py` to point to your desired checkpoint weights before running prediction. This ensures you're using the correct trained model during evaluation, and run pip install again to ensure update.
