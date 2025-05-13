@@ -157,7 +157,7 @@ This script performs the following:
 - Computes F1 score (with tolerance) and Matthews Correlation Coefficient (MCC) for each sequence.
 - Taking input of the original csv, writes results to a new csv with a column containing the Predicted structure
 
-> 📌 **Note**: Be sure to modify `sincfold/model.py` to point to your desired checkpoint weights before running prediction. This ensures you're using the correct trained model during evaluation.
+> 📌 **Note**: Be sure to modify `sincfold/model.py` to point to your desired checkpoint weights before running prediction. This ensures you're using the correct trained model during evaluation, and run pip install again to ensure update.
 
 ---
 
