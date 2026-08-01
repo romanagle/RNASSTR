@@ -1,290 +1,111 @@
-# shared/rfam_utils.py
-
-"""
-Utilities for parsing:
-- Rfam.cm
-- Rfam.clanin
-
-Extracts:
-- RFAM accession
-- short NAME
-- CLEN
-- NSEQ
-- clan assignments
-
-Used throughout the RNASSTR revision pipeline.
-"""
+"""Parse Rfam covariance-model and clan metadata."""
 
 from pathlib import Path
+
 import pandas as pd
 
 
-# ============================================================
-# Rfam.cm parsing
-# ============================================================
-
 def parse_rfam_cm(cm_file):
-    """
-    Parse metadata from Rfam.cm.
-
-    Extracts:
-    - ACC
-    - NAME
-    - CLEN
-    - NSEQ
-
-    Returns
-    -------
-    pandas.DataFrame
-    """
-
-    cm_file = Path(cm_file)
-
+    """Return ACC, NAME, CLEN, and NSEQ fields from an Rfam CM file."""
     records = []
-
     current = {}
 
-    with open(cm_file) as f:
-
-        for line in f:
-
-            line = line.strip()
-
+    with Path(cm_file).open(encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
             if not line:
                 continue
-
-            # ------------------------------------------------
-            # End of model block
-            # ------------------------------------------------
             if line == "//":
-
-                # only append COMPLETE records
                 if "family" in current:
-
                     records.append(current.copy())
-
                 current = {}
-
                 continue
 
-            # ------------------------------------------------
-            # Parse fields
-            # ------------------------------------------------
+            field, _, value = line.partition(" ")
+            value = value.strip()
+            if field == "ACC" and value:
+                current["family"] = value
+            elif field == "NAME" and value:
+                current["name"] = value
+            elif field in {"CLEN", "NSEQ"} and value:
+                try:
+                    current[field.lower()] = int(value)
+                except ValueError:
+                    continue
 
-            if line.startswith("ACC"):
+    dataframe = pd.DataFrame(records)
+    if dataframe.empty:
+        return dataframe
 
-                fields = line.split(maxsplit=1)
-
-                if len(fields) > 1:
-                    current["family"] = fields[1].strip()
-
-            elif line.startswith("NAME"):
-
-                fields = line.split(maxsplit=1)
-
-                if len(fields) > 1:
-                    current["name"] = fields[1].strip()
-
-            elif line.startswith("CLEN"):
-
-                fields = line.split(maxsplit=1)
-
-                if len(fields) > 1:
-
-                    try:
-                        current["clen"] = int(fields[1])
-
-                    except:
-                        pass
-
-            elif line.startswith("NSEQ"):
-
-                fields = line.split(maxsplit=1)
-
-                if len(fields) > 1:
-
-                    try:
-                        current["nseq"] = int(fields[1])
-
-                    except:
-                        pass
-
-    df = pd.DataFrame(records)
-
-    # --------------------------------------------------------
-    # Deduplicate families
-    # --------------------------------------------------------
-
-    # Prefer rows with non-null CLEN
-    df["clen_missing"] = df["clen"].isna()
-
-    df = (
-        df
-        .sort_values("clen_missing")
+    if "clen" not in dataframe.columns:
+        dataframe["clen"] = pd.NA
+    dataframe["clen_missing"] = dataframe["clen"].isna()
+    return (
+        dataframe.sort_values("clen_missing")
         .drop_duplicates(subset=["family"], keep="first")
         .drop(columns=["clen_missing"])
+        .reset_index(drop=True)
     )
 
-    df = df.reset_index(drop=True)
-
-    print(f"\nParsed {len(df)} unique RFAM families from {cm_file}")
-
-    print(df.head())
-
-    return df
-
-
-# ============================================================
-# Clan parsing
-# ============================================================
 
 def parse_rfam_clans(clan_file):
-    """
-    Parse Rfam.clanin.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Columns:
-    - family
-    - clan
-    """
-
-    clan_file = Path(clan_file)
-
+    """Return Rfam family-to-clan assignments from an Rfam clan file."""
     records = []
-
-    with open(clan_file) as f:
-
-        for line in f:
-
-            line = line.strip()
-
-            if not line:
+    with Path(clan_file).open(encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
                 continue
-
-            if line.startswith("#"):
-                continue
-
             fields = line.split()
+            if len(fields) >= 2:
+                records.append({"family": fields[1], "clan": fields[0]})
+    return pd.DataFrame(records, columns=["family", "clan"])
 
-            if len(fields) < 2:
-                continue
-
-            clan = fields[0]
-            family = fields[1]
-
-            records.append({
-                "family": family,
-                "clan": clan
-            })
-
-    df = pd.DataFrame(records)
-
-    print(f"\nParsed {len(df)} clan mappings from {clan_file}")
-
-    return df
-
-
-# ============================================================
-# Combined metadata table
-# ============================================================
 
 def build_rfam_metadata(cm_file, clan_file=None):
-    """
-    Build combined RFAM metadata table.
-    """
-
-    rfam_df = parse_rfam_cm(cm_file)
-
-    if rfam_df.empty:
-
-        raise ValueError(
-            "No RFAM records parsed from Rfam.cm"
-        )
-
+    """Combine Rfam covariance-model metadata with optional clan assignments."""
+    metadata = parse_rfam_cm(cm_file)
+    if metadata.empty:
+        raise ValueError("No Rfam records were parsed from the CM file")
     if clan_file is not None:
+        clans = parse_rfam_clans(clan_file)
+        if not clans.empty:
+            metadata = metadata.merge(clans, on="family", how="left")
+    return metadata
 
-        clan_df = parse_rfam_clans(clan_file)
-
-        if not clan_df.empty:
-
-            rfam_df = rfam_df.merge(
-                clan_df,
-                on="family",
-                how="left"
-            )
-
-    return rfam_df
-
-
-# ============================================================
-# Lookup dictionaries
-# ============================================================
 
 def build_family_name_dict(rfam_df):
-
     return dict(zip(rfam_df["family"], rfam_df["name"]))
 
 
 def build_family_clen_dict(rfam_df):
-
     return dict(zip(rfam_df["family"], rfam_df["clen"]))
 
 
 def build_family_nseq_dict(rfam_df):
-
     return dict(zip(rfam_df["family"], rfam_df["nseq"]))
 
 
 def build_family_clan_dict(rfam_df):
-
     if "clan" not in rfam_df.columns:
         return {}
-
     return dict(zip(rfam_df["family"], rfam_df["clan"]))
 
 
-# ============================================================
-# Main
-# ============================================================
-
-if __name__ == "__main__":
-
+def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "--cm",
-        required=True,
-        help="Path to Rfam.cm"
+    parser = argparse.ArgumentParser(
+        description="Build an Rfam family metadata table from CM and clan files."
     )
-
-    parser.add_argument(
-        "--clans",
-        default=None,
-        help="Path to Rfam.clanin"
-    )
-
-    parser.add_argument(
-        "--out",
-        required=True,
-        help="Output TSV"
-    )
-
+    parser.add_argument("--cm", required=True, help="Path to Rfam.cm")
+    parser.add_argument("--clans", help="Path to Rfam.clanin")
+    parser.add_argument("--out", required=True, help="Output TSV path")
     args = parser.parse_args()
 
-    df = build_rfam_metadata(
-        args.cm,
-        args.clans
-    )
+    metadata = build_rfam_metadata(args.cm, args.clans)
+    metadata.to_csv(args.out, sep="\t", index=False)
 
-    df.to_csv(
-        args.out,
-        sep="\t",
-        index=False
-    )
 
-    print(f"\nSaved metadata table -> {args.out}")
+if __name__ == "__main__":
+    main()
