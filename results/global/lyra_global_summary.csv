@@ -1,0 +1,2 @@
+model,n_truth,n_scored,n_missing,n_invalid,coverage,mean_f1,mean_mcc
+transpred,336678,327390,9288,0,0.9724128098658065,0.5917451590764969,0.603386370279212

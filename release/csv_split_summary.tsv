@@ -1,0 +1,4 @@
+split	n_families_in_split_file	n_sto_files_used	n_sequences_written
+train	2795	2804	7055629
+val	648	648	383555
+test	636	636	336678

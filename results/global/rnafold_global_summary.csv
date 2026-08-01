@@ -1,0 +1,2 @@
+model,n_truth,n_scored,n_missing,n_invalid,coverage,mean_f1,mean_mcc
+rnafold,11382,11382,0,0,1.0,0.3453724288238021,0.3506951024970202

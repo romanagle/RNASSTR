@@ -1,0 +1,7 @@
+model,category,false_positive_pairs,fraction_of_model_false_positives
+RNAfold,Adjacent to annotated pair,11824,0.04374058989127741
+RNAfold,Alternative partner,90064,0.33317426319079907
+RNAfold,Other unannotated region,168433,0.6230851469179235
+Retrained SincFold,Adjacent to annotated pair,10061,0.06860458773150042
+Retrained SincFold,Alternative partner,53395,0.36409322750456863
+Retrained SincFold,Other unannotated region,83196,0.5673021847639309

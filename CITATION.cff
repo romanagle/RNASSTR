@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Please cite the RNASSTR manuscript and versioned dataset release."
+title: "RNASSTR: RNA Secondary Structure Repository"
+type: dataset
+license: CC-BY-4.0
+authors:
+  - family-names: Langeberg
+    given-names: Conner J.
+  - family-names: Kim
+    given-names: Taehan
+  - family-names: Nagle
+    given-names: Roma
+  - family-names: Rajinikanth
+    given-names: Agni
+  - family-names: Meredith
+    given-names: Charlotte
+  - family-names: Garuadapuri
+    given-names: Dimple Amitha
+  - family-names: Doudna
+    given-names: Jennifer A.
+  - family-names: Cate
+    given-names: Jamie H. D.
+repository-code: "https://github.com/romanagle/RNASSTR"
+version: "2.0.0"
+date-released: 2026-08-01
+
