@@ -7,6 +7,8 @@ The complete dataset and large per-sequence model outputs are distributed throug
 ## Contents
 
 - `scripts/shared/rfam_utils.py`: parse Rfam covariance-model metadata and family-to-clan assignments.
+- `scripts/dataset/make_struct_clan_splits_v3.py`: construct structural- and clan-aware family partitions.
+- `scripts/dataset/apply_family_splits_to_sto_with_family.py`: project Stockholm consensus structures onto individual sequences and write the final partition CSVs.
 - `results/global/`: compact model-wide summary tables.
 - `results/per_family/`: family-level performance tables used in the manuscript and supplementary figures.
 - `release/`: dataset and benchmark manifests.
@@ -60,6 +62,34 @@ cmsearch \
 ```
 
 `RFxxxxx.cm` and `reference_sequences.fna` were replaced with the family covariance model and corresponding sequence database for each search. Reported hits were subsequently filtered to retain E-values of 0.01 or less, together with the sequence, structural, and phylogenetic criteria described in the manuscript.
+
+The final structural partitions were generated with:
+
+```bash
+python scripts/dataset/make_struct_clan_splits_v3.py \
+  --sto-dir STO_dedupe \
+  --rfam-cm Rfam.cm \
+  --clanin Rfam.clanin \
+  --outdir splits_struct_clan_v3_fast10 \
+  --max-seqs-per-family 10 \
+  --evalue 0.01 \
+  --cpu 64 \
+  --min-val-families 300 \
+  --min-test-families 300 \
+  --min-val-components 150 \
+  --min-test-components 150
+```
+
+The family assignments were applied to the Stockholm files with:
+
+```bash
+python scripts/dataset/apply_family_splits_to_sto_with_family.py \
+  --sto-dir STO_dedupe \
+  --train-families splits_struct_clan_v3_fast10/train_families.txt \
+  --val-families splits_struct_clan_v3_fast10/val_families.txt \
+  --test-families splits_struct_clan_v3_fast10/test_families.txt \
+  --outdir csv_splits_v3_fast10
+```
 
 ## Citation
 
