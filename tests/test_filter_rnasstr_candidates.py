@@ -22,6 +22,7 @@ class FilterCandidatesTest(unittest.TestCase):
             "sequence",
             "structure",
             "accession",
+            "strand",
             "start",
             "end",
             "evalue",
@@ -32,11 +33,14 @@ class FilterCandidatesTest(unittest.TestCase):
             {"id": "r3", "family": "RF00001", "sequence": "AAGGGGCCCCUUUU", "structure": "((..........))"},
         ]
         candidate_rows = [
-            {"id": "good", "family": "RF00001", "sequence": "AAGGCCCCUUUU", "structure": "((........))", "accession": "chr1", "start": "1", "end": "12", "evalue": "1e-8"},
-            {"id": "overlap", "family": "RF00001", "sequence": "GGAAAACCCCUU", "structure": "((........))", "accession": "chr1", "start": "5", "end": "16", "evalue": "1e-4"},
-            {"id": "duplicate", "family": "RF00001", "sequence": "AAGGCCCCUUUU", "structure": "((........))", "accession": "chr2", "start": "1", "end": "12", "evalue": "1e-6"},
-            {"id": "long", "family": "RF00001", "sequence": "AA" + "C" * 16 + "UU", "structure": "((................))", "accession": "chr3", "start": "1", "end": "20", "evalue": "1e-6"},
-            {"id": "unpaired", "family": "RF00001", "sequence": "AAGGCCCCUUUU", "structure": "............", "accession": "chr4", "start": "1", "end": "12", "evalue": "1e-6"},
+            {"id": "good", "family": "RF00001", "sequence": "AAGGCCCCUUUU", "structure": "((........))", "accession": "chr1", "strand": "+", "start": "1", "end": "12", "evalue": "1e-8"},
+            {"id": "overlap", "family": "RF00001", "sequence": "GGAAAACCCCUU", "structure": "((........))", "accession": "chr1", "strand": "+", "start": "5", "end": "16", "evalue": "1e-4"},
+            {"id": "opposite", "family": "RF00001", "sequence": "GGAAAACCCCUU", "structure": "((........))", "accession": "chr1", "strand": "-", "start": "5", "end": "16", "evalue": "1e-3"},
+            {"id": "duplicate", "family": "RF00001", "sequence": "AAGGCCCCUUUU", "structure": "((........))", "accession": "chr2", "strand": "+", "start": "1", "end": "12", "evalue": "1e-6"},
+            {"id": "long", "family": "RF00001", "sequence": "AA" + "C" * 16 + "UU", "structure": "((................))", "accession": "chr3", "strand": "+", "start": "1", "end": "20", "evalue": "1e-6"},
+            {"id": "unpaired", "family": "RF00001", "sequence": "AAGGCCCCUUUU", "structure": "............", "accession": "chr4", "strand": "+", "start": "1", "end": "12", "evalue": "1e-6"},
+            {"id": "ambiguous", "family": "RF00001", "sequence": "AAGGCCCCUUUN", "structure": "((........))", "accession": "chr5", "strand": "+", "start": "1", "end": "12", "evalue": "1e-6"},
+            {"id": "unreferenced", "family": "RF99999", "sequence": "AACCGGUU", "structure": "((....))", "accession": "chr6", "strand": "+", "start": "1", "end": "8", "evalue": "1e-6"},
         ]
 
         with tempfile.TemporaryDirectory() as directory:
@@ -79,12 +83,15 @@ class FilterCandidatesTest(unittest.TestCase):
             with rejections.open(newline="") as handle:
                 rejected = list(csv.DictReader(handle))
 
-            self.assertEqual([row["id"] for row in retained], ["good"])
+            self.assertEqual(
+                [row["id"] for row in retained],
+                ["good", "opposite", "duplicate", "unreferenced"],
+            )
             reasons = {row["id"]: row["reason"] for row in rejected}
             self.assertEqual(reasons["overlap"], "overlapping_hit")
-            self.assertEqual(reasons["duplicate"], "duplicate_sequence")
             self.assertEqual(reasons["long"], "length_outlier")
             self.assertEqual(reasons["unpaired"], "low_pair_count")
+            self.assertEqual(reasons["ambiguous"], "non_aucg_sequence")
 
 
 if __name__ == "__main__":

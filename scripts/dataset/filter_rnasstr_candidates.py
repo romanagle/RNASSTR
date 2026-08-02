@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import ast
 import csv
-import hashlib
 import math
 import sqlite3
 import statistics
@@ -23,6 +22,7 @@ CANONICAL_PAIRS = {
     ("G", "U"),
     ("U", "G"),
 }
+VALID_BASES = set("AUCG")
 OPEN_TO_CLOSE = {"(": ")", "[": "]", "{": "}", "<": ">"}
 OPEN_TO_CLOSE.update({chr(code): chr(code).lower() for code in range(65, 91)})
 CLOSE_TO_OPEN = {close: open_ for open_, close in OPEN_TO_CLOSE.items()}
@@ -68,9 +68,12 @@ def parse_pairs(row):
 
 
 def record_metrics(row):
-    sequence = (row.get("sequence") or "").upper().replace("T", "U")
+    sequence = (row.get("sequence") or "").upper()
     if not sequence:
-        raise ValueError("record lacks sequence")
+        raise ValueError("empty sequence")
+    invalid_bases = sorted(set(sequence) - VALID_BASES)
+    if invalid_bases:
+        raise ValueError(f"sequence contains non-AUCG characters: {''.join(invalid_bases)}")
     pairs = parse_pairs(row)
     for i, j in pairs:
         if i < 0 or j >= len(sequence):
@@ -131,69 +134,47 @@ def parse_optional_int(value):
 
 def interval_fields(row):
     accession = (row.get("accession") or "").strip()
+    strand = (row.get("strand") or row.get("hit_strand") or "").strip()
     start = parse_optional_int(row.get("start"))
     end = parse_optional_int(row.get("end"))
     if not accession or start is None or end is None:
         return None
-    return accession, min(start, end), max(start, end)
+    return accession, strand, min(start, end), max(start, end)
 
 
 def initialize_database(connection):
     connection.executescript(
         """
-        CREATE TABLE seen_sequences (
-            sequence_key TEXT PRIMARY KEY
-        );
         CREATE TABLE intervals (
             row_number INTEGER PRIMARY KEY,
             accession TEXT NOT NULL,
+            strand TEXT NOT NULL,
             start INTEGER NOT NULL,
             end INTEGER NOT NULL,
             evalue REAL NOT NULL,
-            pair_count INTEGER NOT NULL,
-            sequence_length INTEGER NOT NULL,
             record_id TEXT NOT NULL
         );
         CREATE INDEX intervals_accession_start
-            ON intervals(accession, start, end);
+            ON intervals(accession, strand, start, end);
         """
     )
 
 
-def is_duplicate(connection, family, sequence, scope):
-    prefix = family if scope == "family" else "global"
-    digest = hashlib.sha256(f"{prefix}\0{sequence}".encode()).hexdigest()
-    cursor = connection.execute(
-        "INSERT OR IGNORE INTO seen_sequences(sequence_key) VALUES (?)", (digest,)
-    )
-    return cursor.rowcount == 0
-
-
 def choose_interval_winner(component):
-    return min(
-        component,
-        key=lambda row: (
-            row[4],
-            -row[5],
-            -row[6],
-            row[7],
-            row[0],
-        ),
-    )
+    return min(component, key=lambda row: row[5])
 
 
 def resolve_overlaps(connection):
     rejected = {}
     cursor = connection.execute(
         """
-        SELECT row_number, accession, start, end, evalue,
-               pair_count, sequence_length, record_id
+        SELECT row_number, accession, strand, start, end, evalue, record_id
         FROM intervals
-        ORDER BY accession, start, end
+        ORDER BY accession, strand, start, end
         """
     )
     component = []
-    component_accession = None
+    component_key = None
     component_end = None
 
     def finish(rows):
@@ -202,13 +183,14 @@ def resolve_overlaps(connection):
         winner = choose_interval_winner(rows)
         for row in rows:
             if row[0] != winner[0]:
-                rejected[row[0]] = winner[7]
+                rejected[row[0]] = winner[6]
 
     for row in cursor:
-        accession, start, end = row[1], row[2], row[3]
+        accession, strand, start, end = row[1], row[2], row[3], row[4]
+        key = (accession, strand)
         if (
             component
-            and accession == component_accession
+            and key == component_key
             and start <= component_end
         ):
             component.append(row)
@@ -216,7 +198,7 @@ def resolve_overlaps(connection):
         else:
             finish(component)
             component = [row]
-            component_accession = accession
+            component_key = key
             component_end = end
     finish(component)
     return rejected
@@ -259,9 +241,6 @@ def main():
     parser.add_argument("--rejections", required=True, type=Path)
     parser.add_argument("--reference-summary", required=True, type=Path)
     parser.add_argument("--standard-deviations", type=float, default=2.0)
-    parser.add_argument(
-        "--dedup-scope", choices=("family", "global"), default="family"
-    )
     parser.add_argument("--skip-overlap-resolution", action="store_true")
     args = parser.parse_args()
 
@@ -309,39 +288,40 @@ def main():
                 record_id = (row.get("id") or f"row_{input_row_number}").strip()
                 try:
                     family = family_value(row)
-                    if family not in reference:
-                        raise ValueError("family absent from Rfam reference")
                     sequence, length, pair_count, canonical_count = record_metrics(row)
-                except Exception as error:
+                except ValueError as error:
+                    if "non-AUCG" not in str(error) and "empty sequence" not in str(error):
+                        raise ValueError(
+                            f"invalid candidate row {input_row_number} ({record_id}): {error}"
+                        ) from error
                     rejection_writer.writerow({
                         "id": record_id,
                         "family": row.get("family") or row.get("rfam_id") or "",
-                        "reason": "invalid_record",
+                        "reason": "non_aucg_sequence",
                         "detail": str(error),
                     })
                     continue
 
-                values = reference[family]
-                width = args.standard_deviations
-                length_min = max(0, values["length_mean"] - width * values["length_sd"])
-                length_max = values["length_mean"] + width * values["length_sd"]
-                pair_min = max(0, values["pair_mean"] - width * values["pair_sd"])
-                canonical_min = max(
-                    0, values["canonical_mean"] - width * values["canonical_sd"]
-                )
-
                 failure = None
-                if length < length_min or length > length_max:
-                    failure = ("length_outlier", f"{length} not in [{length_min:.3f}, {length_max:.3f}]")
-                elif pair_count < pair_min:
-                    failure = ("low_pair_count", f"{pair_count} < {pair_min:.3f}")
-                elif canonical_count < canonical_min:
-                    failure = (
-                        "low_canonical_pair_count",
-                        f"{canonical_count} < {canonical_min:.3f}",
+                values = reference.get(family)
+                if values:
+                    width = args.standard_deviations
+                    length_min = max(0, values["length_mean"] - width * values["length_sd"])
+                    length_max = values["length_mean"] + width * values["length_sd"]
+                    pair_min = max(0, values["pair_mean"] - width * values["pair_sd"])
+                    canonical_min = max(
+                        0, values["canonical_mean"] - width * values["canonical_sd"]
                     )
-                elif is_duplicate(database, family, sequence, args.dedup_scope):
-                    failure = ("duplicate_sequence", args.dedup_scope)
+
+                    if length < length_min or length > length_max:
+                        failure = ("length_outlier", f"{length} not in [{length_min:.3f}, {length_max:.3f}]")
+                    elif pair_count < pair_min:
+                        failure = ("low_pair_count", f"{pair_count} < {pair_min:.3f}")
+                    elif canonical_count < canonical_min:
+                        failure = (
+                            "low_canonical_pair_count",
+                            f"{canonical_count} < {canonical_min:.3f}",
+                        )
 
                 if failure:
                     rejection_writer.writerow({
@@ -364,22 +344,20 @@ def main():
 
                 interval = interval_fields(row)
                 if interval and not args.skip_overlap_resolution:
-                    accession, start, end = interval
+                    accession, strand, start, end = interval
                     database.execute(
                         """
                         INSERT INTO intervals
-                        (row_number, accession, start, end, evalue,
-                         pair_count, sequence_length, record_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        (row_number, accession, strand, start, end, evalue, record_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             accepted_row_number,
                             accession,
+                            strand,
                             start,
                             end,
                             parse_optional_float(row.get("evalue")),
-                            pair_count,
-                            length,
                             record_id,
                         ),
                     )

@@ -50,7 +50,7 @@ Dataset generation used Rfam v14.10, GTDB release 214, NCBI RefSeq release 229, 
 cmsearch --cpu 32 --cut_ga --tblout RFxxxxx.tblout -A RFxxxxx.sto RFxxxxx.cm reference_sequences.fna > RFxxxxx.cmsearch.log
 ```
 
-`filter_rnasstr_candidates.py` implements the quality-control criteria described in the manuscript Methods. No phylogenetic filter is applied.
+`filter_rnasstr_candidates.py` implements the quality-control criteria described in the manuscript Methods. No phylogenetic filter is applied. Per-family sequence deduplication was performed separately with MMseqs2 after quality control.
 
 ```bash
 python scripts/dataset/filter_rnasstr_candidates.py --candidates merged_candidates.csv --rfam-reference rfam_reference_sequences.csv --output filtered_candidates.csv --rejections qc_rejections.csv --reference-summary rfam_qc_thresholds.csv
