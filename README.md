@@ -9,6 +9,7 @@ The complete dataset and large per-sequence model outputs are distributed throug
 - `scripts/shared/rfam_utils.py`: parse Rfam covariance-model metadata and family-to-clan assignments.
 - `scripts/dataset/make_struct_clan_splits_v3.py`: construct structural- and clan-aware family partitions.
 - `scripts/dataset/apply_family_splits_to_sto_with_family.py`: project Stockholm consensus structures onto individual sequences and write the final partition CSVs.
+- `scripts/dataset/filter_rnasstr_candidates.py`: reconstructed implementation of the documented sequence and structure quality-control criteria.
 - `results/global/`: compact model-wide summary tables.
 - `results/per_family/`: family-level performance tables used in the manuscript and supplementary figures.
 - `release/`: dataset and benchmark manifests.
@@ -61,7 +62,20 @@ cmsearch \
   > results/RFxxxxx.cmsearch.log
 ```
 
-`RFxxxxx.cm` and `reference_sequences.fna` were replaced with the family covariance model and corresponding sequence database for each search. Reported hits were subsequently filtered to retain E-values of 0.01 or less, together with the sequence, structural, and phylogenetic criteria described in the manuscript.
+`RFxxxxx.cm` and `reference_sequences.fna` were replaced with the family covariance model and corresponding sequence database for each search. Reported hits were subsequently filtered to retain E-values of 0.01 or less, together with the sequence and structural criteria described in the manuscript.
+
+The original quality-control script was not retained. `filter_rnasstr_candidates.py` is a reconstructed implementation of the documented procedure and is provided for reproducibility of future releases. It removes exact sequence duplicates, sequences outside the family reference-length mean by more than two standard deviations, sequences more than two standard deviations below the family reference mean for annotated or canonical base-pair counts, and lower-ranked overlapping genomic hits. No phylogenetic filter is applied. Because this is a reconstruction, it should not be treated as the exact program used to generate the archived RNASSTR v2 files unless those files are regenerated and verified against it.
+
+The reconstructed filter accepts normalized candidate and Rfam-reference CSV files containing `id`, `family` or `rfam_id`, `sequence`, and either `structure` or `base_pairs`. Genomic overlap resolution additionally uses `accession`, `start`, `end`, and `evalue` when available:
+
+```bash
+python scripts/dataset/filter_rnasstr_candidates.py \
+  --candidates merged_candidates.csv \
+  --rfam-reference rfam_reference_sequences.csv \
+  --output filtered_candidates.csv \
+  --rejections qc_rejections.csv \
+  --reference-summary rfam_qc_thresholds.csv
+```
 
 The final structural partitions were generated with:
 
