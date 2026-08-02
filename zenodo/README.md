@@ -24,11 +24,11 @@ The Zenodo record should be titled **RNASSTR v2: RNA sequence–secondary-struct
 ### Metadata and reproducibility
 
 - family and sequence metadata tables
+- sampled sequences, Infernal `cmscan` tabular output, and structural-hit records used to construct the final partitions
 - validation reports
 - release manifest with SHA-256 checksums
 - source archive of the matching GitHub release
 
-Do not upload manuscript drafts, reviewer correspondence, `.DS_Store` files, Python caches, Lyra-UFold output, or obsolete MXFold2 installation artifacts.
+Do not upload manuscript drafts, reviewer correspondence, `.DS_Store` files, or Python caches.
 
 The DOI and checksums will be added after the final files are frozen.
-

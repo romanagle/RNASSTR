@@ -1,0 +1,4 @@
+split	n_components	n_families	n_sequences	sequence_fraction
+train	7	2795	7055629	0.90737580
+val	606	648	383555	0.04932636
+test	607	636	336678	0.04329784
