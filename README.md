@@ -2,7 +2,7 @@
 
 RNASSTR is a large, structure-aware collection of RNA sequence–secondary-structure pairs derived from Rfam covariance models, reference genomes, and Rfam full alignments. RNASSTR is described in *Improving RNA Secondary Structure Prediction Through Expanded Training Data*.
 
-The complete dataset and large per-sequence model outputs are distributed through Zenodo: [https://doi.org/10.5281/zenodo.15319167](https://doi.org/10.5281/zenodo.15319167).
+The complete dataset and large per-sequence model outputs are distributed through Zenodo: [https://doi.org/10.5281/zenodo.21752928](https://doi.org/10.5281/zenodo.21752928).
 
 ## Contents
 
@@ -10,6 +10,8 @@ The complete dataset and large per-sequence model outputs are distributed throug
 - `scripts/dataset/make_struct_clan_splits_v3.py`: construct structural- and clan-aware family partitions.
 - `scripts/dataset/apply_family_splits_to_sto_with_family.py`: project Stockholm consensus structures onto individual sequences and write the final partition CSVs.
 - `scripts/dataset/filter_rnasstr_candidates.py`: apply the sequence and structure quality-control criteria used to generate RNASSTR.
+- `scripts/scoring/score_sincfold_models.py`: score published and RNASSTR-retrained SincFold predictions.
+- `scripts/scoring/score_lyra_models.py`: score Lyra-TransPred predictions.
 - `results/global/`: compact model-wide summary tables.
 - `results/per_family/`: family-level performance tables used in the manuscript and supplementary figures.
 - `release/`: dataset and benchmark manifests.
@@ -26,7 +28,7 @@ The revised analysis reports:
 
 ## Installation
 
-Create a Python 3.10 or later environment and install the metadata-parsing dependency:
+Create a Python 3.10 or later environment and install the dependencies:
 
 ```bash
 python -m venv .venv
@@ -40,7 +42,7 @@ Build a combined Rfam covariance-model and clan metadata table with:
 python scripts/shared/rfam_utils.py --cm Rfam.cm --clans Rfam.clanin --out rfam_metadata.tsv
 ```
 
-The large dataset and model-output files used in the paper are archived on [Zenodo](https://doi.org/10.5281/zenodo.15319167).
+The large dataset and model-output files used in the paper are archived on [Zenodo](https://doi.org/10.5281/zenodo.21752928).
 
 ## Dataset-generation workflow
 
@@ -70,7 +72,7 @@ python scripts/dataset/apply_family_splits_to_sto_with_family.py --sto-dir STO_d
 
 ## Citation
 
-Please cite the manuscript and the [RNASSTR Zenodo record](https://doi.org/10.5281/zenodo.15319167).
+Please cite the manuscript and the [RNASSTR Zenodo record](https://doi.org/10.5281/zenodo.21752928).
 
 ## Licenses
 
