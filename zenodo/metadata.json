@@ -1,0 +1,36 @@
+{
+  "title": "RNASSTR v2: RNA sequence-secondary-structure pairs and model benchmark outputs",
+  "upload_type": "dataset",
+  "description": "RNASSTR v2 provides structure-aware training, validation, and test partitions of RNA sequence-secondary-structure pairs, together with the model prediction and scoring files used to evaluate published SincFold, RNASSTR-retrained SincFold, Lyra-TransPred, and RNAfold in the accompanying manuscript.",
+  "creators": [
+    {"name": "Langeberg, Conner J."},
+    {"name": "Kim, Taehan"},
+    {"name": "Nagle, Roma"},
+    {"name": "Rajinikanth, Agni"},
+    {"name": "Meredith, Charlotte"},
+    {"name": "Garuadapuri, Dimple Amitha"},
+    {"name": "Doudna, Jennifer A."},
+    {"name": "Cate, Jamie H. D."}
+  ],
+  "license": "cc-by-4.0",
+  "access_right": "open",
+  "keywords": [
+    "RNA",
+    "RNA secondary structure",
+    "Rfam",
+    "machine learning",
+    "benchmark dataset",
+    "SincFold",
+    "Lyra-TransPred",
+    "RNAfold"
+  ],
+  "version": "2.0.0",
+  "language": "eng",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/romanagle/RNASSTR",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

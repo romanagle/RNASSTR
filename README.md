@@ -1,167 +1,77 @@
-# RNASSTR: RNA Secondary Structure Repository
+# RNASSTR
 
-**RNASSTR** is a curated benchmark suite and reproducible pipeline for evaluating RNA secondary structure prediction models. It provides standardized datasets, conversion utilities, and evaluation scripts to facilitate consistent benchmarking across various models, including [sincFold](https://github.com/sinc-lab/sincFold) and [MXfold2](https://github.com/mxfold/mxfold2).
+RNASSTR is a large, structure-aware collection of RNA sequence–secondary-structure pairs derived from Rfam covariance models, reference genomes, and Rfam full alignments. RNASSTR is described in *Improving RNA Secondary Structure Prediction Through Expanded Training Data*.
 
-If you use RNASSTR in your research, please cite the following paper:
+The complete dataset and large per-sequence model outputs are distributed through Zenodo: [https://doi.org/10.5281/zenodo.15319167](https://doi.org/10.5281/zenodo.15319167).
 
-> @article{langeberg2025improving,  
-> title={Improving RNA Secondary Structure Prediction Through Expanded Training Data},  
-> author={Langeberg, Conner J and Kim, Taehan and Nagle, Roma and Meredith, Charlotte and Garuadapuri, Dimple Amitha and Doudna, Jennifer A and Cate, Jamie HD},  
-> journal={bioRxiv},  
-> pages={2025--05},  
-> year={2025},  
-> publisher={Cold Spring Harbor Laboratory}  
-> }
+## Contents
 
----
+- `scripts/shared/rfam_utils.py`: parse Rfam covariance-model metadata and family-to-clan assignments.
+- `scripts/dataset/make_struct_clan_splits_v3.py`: construct structural- and clan-aware family partitions.
+- `scripts/dataset/apply_family_splits_to_sto_with_family.py`: project Stockholm consensus structures onto individual sequences and write the final partition CSVs.
+- `scripts/dataset/filter_rnasstr_candidates.py`: apply the sequence and structure quality-control criteria used to generate RNASSTR.
+- `results/global/`: compact model-wide summary tables.
+- `results/per_family/`: family-level performance tables used in the manuscript and supplementary figures.
+- `release/`: dataset and benchmark manifests.
+- `zenodo/`: metadata and inventory for the archived data release.
 
-## Table of Contents
+## Models evaluated
 
-- [About](#about)
-- [Installation](#installation)
-- [Format Setup for Prediction and Evaluation](#format-setup-for-prediction-and-evaluation)
-- [MXfold2 Setup](#mxfold2-setup)
-- [sincFold Evaluation](#sincfold-evaluation)
-- [Contact](#contact)
+The revised analysis reports:
 
----
-
-## About
-
-In recent years, deep learning has revolutionized protein structure prediction, achieving remarkable speed and accuracy. RNA structure prediction, however, has lagged behind. Although several methods have shown moderate success in predicting RNA secondary and tertiary structures, none have reached the accuracy observed with contemporary protein models. The lack of success of these RNA structure prediction models has been proposed to be due to limited high-quality structural information that can be used as training data. To probe
-this proposed limitation, we developed a large and diverse dataset comprising paired RNA sequences and their corresponding secondary structures.
-
-### Dataset Format
-
-Each sample in our dataset is stored in CSV files with the following columns:
-- `id`: Unique identifier of the RNA sequence.
-- `sequence`: The RNA nucleotide sequence.
-- `structure`: The dot-bracket notation of the RNA structure.
-- `base_pairs`: A list of paired indices in square brackets (e.g., `[[0, 9], [1, 8]]`).
-- `len`: The length of the sequence.
-
-Datasets are split into:
-- `train/`
-- `validate/`
-- `test/`
-
----
+- SincFold using its published parameters;
+- SincFold retrained using RNASSTR;
+- Lyra-TransPred trained using RNASSTR; and
+- RNAfold on a deterministic, family-stratified subset of the test partition.
 
 ## Installation
 
-Each model may require a different environment setup. See below for details.
-
-
-## Model Setup
-
-MXfold2 requires `.lst` files containing paths to `.bpseq` files for both training and evaluation.
-
-We include wheel files for ease of installation:
-- `setting/mxfold2-0.1.2-cp310-cp310-manylinux_2_17_x86_64.whl` (Linux)
-- `setting/mxfold2-0.1.2-cp310-cp310-macosx_13_0_arm64.whl` (MacOS)
-
-Refer to the official repo for details: [https://github.com/mxfold/mxfold2](https://github.com/mxfold/mxfold2)
-
-
-### For MXfold2
-
-MXfold2 has a more complex setup and requires specific formats and dependencies. This repo includes the following files for reproducibility:
-- `mxfold2_requirements.txt` listing key Python dependencies
-- `mxfold2_install_dependencies.sh` to install MXfold2 from a prebuilt wheel (for Linux or Mac)
-
-Use this setup:
+Create a Python 3.10 or later environment and install the metadata-parsing dependency:
 
 ```bash
-# Clone the repository
-git clone https://github.com/romanagle/RNASSTR.git
-cd RNASSTR
-
-# Create and activate a conda environment
-conda create --name mxfold2_env python=3.10
-conda activate mxfold2_env
-
-# Install dependencies
-pip install -r setting/mxfold2_requirements.txt
-
-# Run custom installation script for MXfold2 wheel
-bash setting/mxfold2_install_dependencies.sh
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-### For sincFold
-
-sincFold's environment and dependencies are self-contained. Please refer directly to the [sincFold repository](https://github.com/sinc-lab/sincFold) for installation. If using RNASSTR for evaluation with sincFold:
-- You must modify the weights in `model.py` of sincFold to switch between training checkpoints.
-- The script `pred_eval_sincfold.py` will predict structures and store the values in the columns of a new csv.
-
-
----
-
-## Format Setup for Prediction and Evaluation
-
-Different models require different input formats. The following steps show how to convert and prepare input data appropriately:
-
-### For MXfold2 and Ufold (.lst with .bpseq)
-
-These models require the input in `.bpseq` format, and `.lst` files that list paths to these `.bpseq` files.
-
-#### Step 1: Convert CSV to BPSEQ
-
-Use `curate_bpseq.py` with one of the dataset splits (e.g., `rna_train.csv`, `rna_test.csv`, or `rna_validate.csv`):
+Build a combined Rfam covariance-model and clan metadata table with:
 
 ```bash
-python curate_bpseq.py --input_csv data/rna_train.csv --output_dir data/bpseq/train
+python scripts/shared/rfam_utils.py --cm Rfam.cm --clans Rfam.clanin --out rfam_metadata.tsv
 ```
 
-This script is designed with argparse and looks like:
+The large dataset and model-output files used in the paper are archived on [Zenodo](https://doi.org/10.5281/zenodo.15319167).
 
-```python
-def main():
-    parser = argparse.ArgumentParser(description="Generate BPSEQ files from a Dataset CSV.")
-    parser.add_argument('-i', '--input_csv', required=True, help="Path to the input CSV file (e.g., combined_output.csv).")
-    parser.add_argument('-o', '--output_dir', required=True, help="Path to the output directory where BPSEQ files will be saved.")
-    args = parser.parse_args()
-    process_csv(args.input_csv, args.output_dir)
-```
+## Dataset-generation workflow
 
-#### Step 2: Create .lst File
-
-Once BPSEQ files are created, generate `.lst` files required by MXfold2 using the `curate_lst.py`. Assign the relevant target paths.
+Dataset generation used Rfam v14.10, GTDB release 214, NCBI RefSeq release 229, and Infernal v1.1.5. See the manuscript Methods for the complete workflow and filtering criteria. The initial searches were run manually for each Rfam family. A representative command was:
 
 ```bash
-python3 curate_lst.py
+cmsearch --cpu 32 --cut_ga --tblout RFxxxxx.tblout -A RFxxxxx.sto RFxxxxx.cm reference_sequences.fna > RFxxxxx.cmsearch.log
 ```
 
----
-
-### Script Summary
-
-| Script                  | Use Case                                                                 |
-|------------------------|--------------------------------------------------------------------------|
-| `curate_bpseq.py`       | Converts RNA CSV to `.bpseq` format for models like MXfold2 or Ufold.     |
-| `curate_lst.py`         | Creates `.lst` file that lists `.bpseq` files for MXfold2 input.         |
-| `pred_eval_sincfold.py` | Runs sincFold predictions and evaluates them using F1 and MCC metrics.   |
-
----
-
-
-## sincFold Evaluation
-
-To evaluate sincFold using RNASSTR benchmark datasets, run the script  `pred_eval_sincfold.py` with relevant paths assigned.
+`filter_rnasstr_candidates.py` implements the quality-control criteria described in the manuscript Methods. No phylogenetic filter is applied. Per-family sequence deduplication was performed separately with MMseqs2 after quality control.
 
 ```bash
-python3 pred_eval_sincfold.py
+python scripts/dataset/filter_rnasstr_candidates.py --candidates merged_candidates.csv --rfam-reference rfam_reference_sequences.csv --output filtered_candidates.csv --rejections qc_rejections.csv --reference-summary rfam_qc_thresholds.csv
 ```
 
-This script performs the following:
-- Runs sincFold structure prediction based on the assigned weight.
-- Parses the predicted dot-bracket strings.
-- Computes F1 score and Matthews Correlation Coefficient (MCC) for sequences.
-- Taking input of the original csv, writes results to a new csv with a column containing the Predicted structure
+The final structural partitions were generated with:
 
-> 📌 **EXTRA Note**: Be sure to modify `sincfold/model.py` to point to your desired checkpoint weights before running prediction. This ensures you're using the correct trained model during evaluation, and run pip install again to ensure update.
+```bash
+python scripts/dataset/make_struct_clan_splits_v3.py --sto-dir STO_dedupe --rfam-cm Rfam.cm --clanin Rfam.clanin --outdir splits_struct_clan_v3_fast10 --max-seqs-per-family 10 --evalue 0.01 --cpu 64 --min-val-families 300 --min-test-families 300 --min-val-components 150 --min-test-components 150
+```
 
----
+The family assignments were applied to the Stockholm files with:
 
-## Contact
+```bash
+python scripts/dataset/apply_family_splits_to_sto_with_family.py --sto-dir STO_dedupe --train-families splits_struct_clan_v3_fast10/train_families.txt --val-families splits_struct_clan_v3_fast10/val_families.txt --test-families splits_struct_clan_v3_fast10/test_families.txt --outdir csv_splits_v3_fast10
+```
 
-For inquiries, open a GitHub issue or reach out directly. For script-specific help, check the docstrings or headers in each script.
+## Citation
+
+Please cite the manuscript and the [RNASSTR Zenodo record](https://doi.org/10.5281/zenodo.15319167).
+
+## Licenses
+
+Code in this repository is released under the [MIT License](LICENSE). The RNASSTR data archive is intended for release under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); see [`DATA_LICENSE.md`](DATA_LICENSE.md).

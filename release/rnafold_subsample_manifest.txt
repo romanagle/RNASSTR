@@ -1,0 +1,10 @@
+source_test_csv	data/test.csv
+random_seed	20260724
+target_per_family	25
+maximum_sequence_length	1000
+allowed_alphabet	ACGU
+test_families	636
+represented_families	636
+selected_sequences	11382
+minimum_selected_length	23
+maximum_selected_length	944
