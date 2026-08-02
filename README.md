@@ -46,6 +46,21 @@ The exact large inputs and outputs used for the paper will be provided in the as
 
 Rfam v14.10 covariance models were searched against GTDB release 214 and NCBI RefSeq release 229 using Infernal v1.1.5 and family-specific gathering thresholds (`--cut_ga`). Rfam full-alignment sequences were incorporated to retain representation of families not recovered from the reference-genome searches. Hits were realigned to their family covariance models, converted to sequence–structure pairs, filtered using the criteria described in the manuscript, and assigned to structure-aware partitions.
 
+The initial searches were run manually for each Rfam family rather than through a single pipeline script. For each family, the corresponding covariance model downloaded from the Rfam FTP site was searched against the appropriate reference-sequence database. A representative command was:
+
+```bash
+cmsearch \
+  --cpu 32 \
+  --cut_ga \
+  --tblout results/RFxxxxx.tblout \
+  -A results/RFxxxxx.sto \
+  models/RFxxxxx.cm \
+  databases/reference_sequences.fna \
+  > results/RFxxxxx.cmsearch.log
+```
+
+`RFxxxxx.cm` and `reference_sequences.fna` were replaced with the family covariance model and corresponding sequence database for each search. Reported hits were subsequently filtered to retain E-values of 0.01 or less, together with the sequence, structural, and phylogenetic criteria described in the manuscript.
+
 ## Citation
 
 Citation metadata is provided in [`CITATION.cff`](CITATION.cff). Please cite both the manuscript and the versioned Zenodo dataset record once the DOI is available.
